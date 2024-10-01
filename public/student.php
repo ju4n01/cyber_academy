@@ -17,13 +17,6 @@ if (!isset($_SESSION['correo']) || $_SESSION['rol'] != 'estudiante') {
 <body>
     <h1>Vista de Estudiante</h1>
     <p>Bienvenido, <?php echo $_SESSION['nombre']; ?>!</p>
-    <nav>
-        <ul>
-            <li><a href="index.php">Volver a Inicio</a></li>
-            <li><a href="teacher.php">Profesor</a></li>
-            <li><a href="admin.php">Administrador</a></li>
-        </ul>
-    </nav>
     <form action="logout.php" method="POST">
       <button type="submit">Cerrar Sesión</button>
     </form>
