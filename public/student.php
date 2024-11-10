@@ -8,6 +8,60 @@ if (!isset($_SESSION['correo']) || $_SESSION['rol'] != 'estudiante') {
 require '../src/db.php'; // Asegúrate de que este archivo contiene la conexión a la base de datos
 
 $correo = $_SESSION['correo'];
+$mensaje = "";
+
+// Procesar el formulario de inscripción
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['curso_id'])) {
+    $curso_id = $_POST['curso_id'];
+    $fecha_inscripcion = date('Y-m-d H:i:s'); // Generar el timestamp actual
+
+    try {
+        // Obtener el usuario_id del estudiante
+        $stmt = $conection->prepare("SELECT id FROM usuarios WHERE correo = ?");
+        $stmt->bind_param("s", $correo);
+        $stmt->execute();
+        $stmt->bind_result($usuario_id);
+        if (!$stmt->fetch()) {
+            throw new Exception("No se encontró el usuario.");
+        }
+        $stmt->close();
+
+        // Verificar si el estudiante ya está inscrito en el curso
+        $stmt = $conection->prepare("SELECT COUNT(*) FROM inscripciones WHERE usuario_id = ? AND curso_id = ?");
+        $stmt->bind_param("ii", $usuario_id, $curso_id);
+        $stmt->execute();
+        $stmt->bind_result($count);
+        $stmt->fetch();
+        $stmt->close();
+
+        if ($count > 0) {
+            throw new Exception("Ya estás inscrito en este curso.");
+        }
+
+        // Insertar la inscripción en la tabla inscripciones
+        $stmt = $conection->prepare("INSERT INTO inscripciones (usuario_id, curso_id, fecha_inscripcion) VALUES (?, ?, ?)");
+        $stmt->bind_param("iis", $usuario_id, $curso_id, $fecha_inscripcion);
+        if (!$stmt->execute()) {
+            throw new Exception("Error al insertar la inscripción: " . $stmt->error);
+        }
+        $stmt->close();
+
+        // Redirigir al usuario después de un envío exitoso
+        $_SESSION['mensaje'] = "Inscripción realizada con éxito.";
+        header("Location: student.php");
+        exit();
+    } catch (Exception $e) {
+        $_SESSION['mensaje'] = "Se produjo un error: " . $e->getMessage();
+        header("Location: student.php");
+        exit();
+    }
+}
+
+// Obtener el mensaje de la sesión si existe
+if (isset($_SESSION['mensaje'])) {
+    $mensaje = $_SESSION['mensaje'];
+    unset($_SESSION['mensaje']);
+}
 
 try {
     // Preparar la consulta para obtener los cursos del estudiante
@@ -60,9 +114,24 @@ try {
         throw new Exception("No se encontraron datos del usuario.");
     }
     $stmt->close();
+
+    // Obtener todos los cursos disponibles para la inscripción
+    $stmt = $conection->prepare("SELECT id, titulo FROM cursos");
+    if (!$stmt) {
+        throw new Exception("Error en la preparación de la consulta: " . $conection->error);
+    }
+    if (!$stmt->execute()) {
+        throw new Exception("Error en la ejecución de la consulta: " . $stmt->error);
+    }
+    $stmt->bind_result($curso_id, $curso_titulo);
+    $cursos_disponibles = [];
+    while ($stmt->fetch()) {
+        $cursos_disponibles[] = ['id' => $curso_id, 'titulo' => $curso_titulo];
+    }
+    $stmt->close();
 } catch (Exception $e) {
-    $error = "Se produjo un error: " . $e->getMessage();
-    error_log($error); // Para registrar el error en el log
+    $mensaje = "Se produjo un error: " . $e->getMessage();
+    error_log($mensaje); // Para registrar el error en el log
 }
 ?>
 
@@ -127,5 +196,22 @@ try {
     <?php else: ?>
         <p>No estás inscrito en ningún curso.</p>
     <?php endif; ?>
+
+    <!-- Formulario para inscribirse a nuevos cursos -->
+    <h2>Inscribirse a Nuevos Cursos</h2>
+    <?php if ($mensaje): ?>
+        <p><?php echo htmlspecialchars($mensaje); ?></p>
+    <?php endif; ?>
+    <form method="POST" action="">
+        <label for="curso_id">Selecciona un curso:</label>
+        <select name="curso_id" id="curso_id" required>
+            <option value="" disabled selected>Selecciona un curso</option>
+            <?php foreach ($cursos_disponibles as $curso): ?>
+                <option value="<?php echo htmlspecialchars($curso['id']); ?>"><?php echo htmlspecialchars($curso['titulo']); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <br>
+        <button type="submit">Inscribirse</button>
+    </form>
 </body>
 </html>
