@@ -345,12 +345,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_usuario'])) {
     $numero_identificacion = $_POST['numero_identificacion'];
     $tipo_documento_id = $_POST['tipo_documento_id'];
     $correo = $_POST['correo'];
+    $clave = $_POST['clave']; // No encriptar la clave
     $rol = $_POST['rol'];
 
     try {
         // Actualizar el usuario en la tabla usuarios
-        $stmt = $conection->prepare("UPDATE usuarios SET nombre = ?, numero_identificacion = ?, tipo_documento_id = ?, correo = ?, rol = ? WHERE id = ?");
-        $stmt->bind_param("ssissi", $nombre, $numero_identificacion, $tipo_documento_id, $correo, $rol, $usuario_id);
+        $stmt = $conection->prepare("UPDATE usuarios SET nombre = ?, numero_identificacion = ?, tipo_documento_id = ?, correo = ?, clave = ?, rol = ? WHERE id = ?");
+        $stmt->bind_param("ssisssi", $nombre, $numero_identificacion, $tipo_documento_id, $correo, $clave, $rol, $usuario_id);
         if (!$stmt->execute()) {
             throw new Exception("Error al actualizar el usuario: " . $stmt->error);
         }
@@ -843,6 +844,8 @@ try {
         </select>
         <label for="correo">Correo:</label>
         <input type="email" name="correo" id="correo" required>
+        <label for="clave">Clave:</label>
+        <input type="text" name="clave" id="clave" required> <!-- Campo de clave sin encriptar -->
         <label for="rol">Rol:</label>
         <select name="rol" id="rol" required>
             <option value="" disabled selected>Selecciona una opción</option>
