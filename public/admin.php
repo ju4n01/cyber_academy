@@ -318,7 +318,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['create_usuario'])) {
     $numero_identificacion = $_POST['numero_identificacion'];
     $tipo_documento_id = $_POST['tipo_documento_id'];
     $correo = $_POST['correo'];
-    $clave = password_hash($_POST['clave'], PASSWORD_BCRYPT);
+    $clave = $_POST['clave']; // No encriptar la clave
     $rol = $_POST['rol'];
     $fecha_registro = date('Y-m-d H:i:s'); // Generar el timestamp actual
 
@@ -385,9 +385,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_usuario'])) {
 }
 
 // Obtener todos los usuarios
+// Obtener todos los usuarios
 try {
     $stmt = $conection->prepare("
-        SELECT u.id, u.nombre, u.numero_identificacion, t.tipo AS tipo_documento, u.correo, u.rol, u.fecha_registro
+        SELECT u.id, u.nombre, u.numero_identificacion, t.tipo AS tipo_documento, u.correo, u.clave, u.rol, u.fecha_registro
         FROM usuarios u
         JOIN tipos_documento t ON u.tipo_documento_id = t.id
     ");
@@ -397,7 +398,7 @@ try {
     if (!$stmt->execute()) {
         throw new Exception("Error en la ejecución de la consulta: " . $stmt->error);
     }
-    $stmt->bind_result($usuario_id, $nombre, $numero_identificacion, $tipo_documento, $correo, $rol, $fecha_registro);
+    $stmt->bind_result($usuario_id, $nombre, $numero_identificacion, $tipo_documento, $correo, $clave, $rol, $fecha_registro);
     $usuarios = [];
     while ($stmt->fetch()) {
         $usuarios[] = [
@@ -406,6 +407,7 @@ try {
             'numero_identificacion' => $numero_identificacion,
             'tipo_documento' => $tipo_documento,
             'correo' => $correo,
+            'clave' => $clave,
             'rol' => $rol,
             'fecha_registro' => $fecha_registro
         ];
@@ -845,7 +847,7 @@ try {
         <label for="correo">Correo:</label>
         <input type="email" name="correo" id="correo" required>
         <label for="clave">Clave:</label>
-        <input type="text" name="clave" id="clave" required> <!-- Campo de clave sin encriptar -->
+        <input type="password" name="clave" id="clave" required> <!-- Campo de clave sin encriptar -->
         <label for="rol">Rol:</label>
         <select name="rol" id="rol" required>
             <option value="" disabled selected>Selecciona una opción</option>
@@ -868,7 +870,7 @@ try {
         <button type="submit" name="delete_usuario">Eliminar</button>
     </form>
 
-    <!-- Listar usuarios -->
+   <!-- Listar usuarios -->
     <h2>Usuarios</h2>
     <table>
         <tr>
@@ -877,6 +879,7 @@ try {
             <th>Número de Identificación</th>
             <th>Tipo de Documento</th>
             <th>Correo</th>
+            <th>Clave</th> <!-- Añadir esta línea -->
             <th>Rol</th>
             <th>Fecha de Registro</th>
         </tr>
@@ -887,6 +890,7 @@ try {
                 <td><?php echo htmlspecialchars($usuario['numero_identificacion']); ?></td>
                 <td><?php echo htmlspecialchars($usuario['tipo_documento']); ?></td>
                 <td><?php echo htmlspecialchars($usuario['correo']); ?></td>
+                <td><?php echo htmlspecialchars($usuario['clave']); ?></td> <!-- Añadir esta línea -->
                 <td><?php echo htmlspecialchars($usuario['rol']); ?></td>
                 <td><?php echo htmlspecialchars($usuario['fecha_registro']); ?></td>
             </tr>
