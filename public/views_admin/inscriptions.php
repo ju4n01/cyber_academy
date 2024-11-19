@@ -170,18 +170,18 @@ try {
 try {
   $stmt = $conection->prepare("SELECT id, tipo FROM tipos_documento");
   if (!$stmt) {
-      throw new Exception("Error en la preparación de la consulta: " . $conection->error);
+    throw new Exception("Error en la preparación de la consulta: " . $conection->error);
   }
   if (!$stmt->execute()) {
-      throw new Exception("Error en la ejecución de la consulta: " . $stmt->error);
+    throw new Exception("Error en la ejecución de la consulta: " . $stmt->error);
   }
   $stmt->bind_result($tipo_documento_id, $tipo);
   $tipos_documento = [];
   while ($stmt->fetch()) {
-      $tipos_documento[] = [
-          'id' => $tipo_documento_id,
-          'tipo' => $tipo
-      ];
+    $tipos_documento[] = [
+      'id' => $tipo_documento_id,
+      'tipo' => $tipo
+    ];
   }
   $stmt->close();
 } catch (Exception $e) {
